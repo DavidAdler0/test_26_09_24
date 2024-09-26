@@ -16,18 +16,18 @@ def normalize_db():
 
     try :
         query1 = """
-            CREATE TABLE contrys(
+            CREATE TABLE contreis(
                     country_id SERIAL PRIMARY KEY,
-                    country_name VARCHAR(100)
-                    add constraint unique_name unique(country_name)
+                    country_name VARCHAR(100),
+                    unique(country_name)
             )
         """
         query2 = """
             CREATE TABLE citys(
                     city_id SERIAL PRIMARY KEY,
-                    country_id int references countrys(country_id),
-                    city_name VARCHAR(100)
-                    add constraint distinct_citys unique (country_id, city_name)
+                    country_id int references contreis(country_id),
+                    city_name VARCHAR(100),
+                    unique (country_id, city_name)
             )
         """
         query3 = """
@@ -35,8 +35,8 @@ def normalize_db():
                     location_id SERIAL PRIMARY KEY,
                     city_id int references citys(city_id),
                     location_latitude NUMERIC(10, 6),
-                    location_longitude NUMERIC(10, 6)
-                    add constraint distinct_locations unique (city_id, location_latitude, location_longitude)
+                    location_longitude NUMERIC(10, 6),
+                    unique (city_id, location_latitude, location_longitude)
             )
         """
         query4 = """
@@ -45,7 +45,7 @@ def normalize_db():
                 location_id INT REFERENCES locations(location_id),
                 target_type VARCHAR(100),
                 target_industry VARCHAR(255),
-                target_priority VARCHAR(5),
+                target_priority VARCHAR(5)
             )
         """
         query5 = '''
@@ -121,7 +121,7 @@ def normalize_db():
             target_priority = mission_row[18]
             try:
 
-                t_cur.execute("INSERT INTO contrys (country_name)"
+                t_cur.execute("INSERT INTO contreis (country_name)"
                             " VALUES (%s,) RETURNING country_id",
                             (country,))
 
