@@ -1,10 +1,11 @@
 import psycopg2
 from psycopg2 import pool
+from flask_sqlalchemy import SQLAlchemy
 
 
 conn_pool = psycopg2.pool.SimpleConnectionPool(
-    min= 1,
-    max= 5,
+    minconn= 1,
+    maxconn= 5,
     dbname="wwii_missions",
     user="postgres",
     password="da7104",
@@ -18,3 +19,6 @@ def get_connection():
         return conn
 def release_connection(conn):
     conn_pool.putconn(conn)
+
+
+db = SQLAlchemy()
