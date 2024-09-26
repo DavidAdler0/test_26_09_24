@@ -16,14 +16,14 @@ def normalize_db():
 
     try :
         query1 = """
-            CREATE TABLE contreis(
+            CREATE TABLE if not exists contreis(
                     country_id SERIAL PRIMARY KEY,
                     country_name VARCHAR(100),
                     unique(country_name)
             )
         """
         query2 = """
-            CREATE TABLE citys(
+            CREATE TABLE  if not exists citys(
                     city_id SERIAL PRIMARY KEY,
                     country_id int references contreis(country_id),
                     city_name VARCHAR(100),
@@ -31,7 +31,7 @@ def normalize_db():
             )
         """
         query3 = """
-            CREATE TABLE locations(
+            CREATE TABLE  if not exists locations(
                     location_id SERIAL PRIMARY KEY,
                     city_id int references citys(city_id),
                     location_latitude NUMERIC(10, 6),
@@ -40,7 +40,7 @@ def normalize_db():
             )
         """
         query4 = """
-            CREATE TABLE targets (
+            CREATE TABLE  if not exists targets (
                 target_id SERIAL PRIMARY KEY,
                 location_id INT REFERENCES locations(location_id),
                 target_type VARCHAR(100),
@@ -49,7 +49,7 @@ def normalize_db():
             )
         """
         query5 = '''
-        CREATE TABLE fixed_mission(
+        CREATE TABLE  if not exists fixed_mission(
             mission_id INTEGER PRIMARY KEY,                 -- Mission ID, auto-incremented primary key
             mission_date DATE,                             -- Mission Date, a date field
             theater_of_operations VARCHAR(100),            -- Theater of Operations, assuming text data
@@ -121,17 +121,17 @@ def normalize_db():
             target_priority = mission_row[18]
             try:
 
-                params = (country,)
-                query = "INSERT INTO contreis (country_name) VALUES (%s) RETURNING country_id"
-                t_cur.execute(query, params)
+                country_params = (country,)
+                country_query = "INSERT INTO contreis (country_name) VALUES (%s) RETURNING country_id"
+                t_cur.execute(country_query, country_params)
                 country_id = t_cur.fetchone()[0]
             except psycopg2.errors.UniqueViolation:
                 pass
 
             try:
-                query = "INSERT INTO citys (country_id, city_name) VALUES (%s,%s) RETURNING city_id"
-                params = (country_id, city)
-                t_cur.execute(query, params)
+                city_query = "INSERT INTO citys (country_id, city_name) VALUES (%s,%s) RETURNING city_id"
+                city_params = (country_id, city)
+                t_cur.execute(city_query, city_params)
 
 
                 city_id = t_cur.fetchone()[0]
@@ -139,25 +139,25 @@ def normalize_db():
                 pass
 
             try:
-                query = "INSERT INTO locations (city_id, location_latitude, location_longitude) VALUES (%s,%s,%s) RETURNING location_id"
-                params = (city_id, latitude, longitude)
-                t_cur.execute(query, params)
+                location_query = "INSERT INTO locations(city_id, location_latitude, location_longitude) VALUES (%s,%s,%s) RETURNING location_id"
+                location_params = (city_id, latitude, longitude)
+                t_cur.execute(location_query, location_params)
 
                 location_id = t_cur.fetchone()[0]
             except psycopg2.errors.UniqueViolation:
                 pass
 
-            query = "INSERT INTO targets (location_id, target_type, target_industry, target_priority) VALUES (%s,%s,%s,%s) RETURNING target_id",
-            params = (location_id, target_type, target_industry, target_priority)
-            t_cur.execute(query, params)
+            target_query = "INSERT INTO targets(location_id, target_type, target_industry, target_priority) VALUES (%s,%s,%s,%s) RETURNING target_id"
+            target_params = (location_id, target_type, target_industry, target_priority)
+            t_cur.execute(target_query, target_params)
 
             target_id = t_cur.fetchone()[0]
 
-            t_cur.execute("insert into fixed_mission select * from mission", ())
+            t_cur.execute("insert into fixed_mission select * from mission", tuple())
 
-            params = (target_id, mission_id)
+            update_target_params = (target_id, mission_id)
             update_target_query = "update fixed_mission set target_id = %s where mission_id = %s"
-            t_cur.execute(update_target_query, params)
+            t_cur.execute(update_target_query, update_target_params)
             t_conn.commit()
 
     except psycopg2.Error as e:
