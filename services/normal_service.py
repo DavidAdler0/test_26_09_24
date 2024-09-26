@@ -1,7 +1,7 @@
 from db import get_connection, release_connection
 import psycopg2
 
-from db import release_connection
+
 
 
 def normalize_db():
@@ -121,39 +121,39 @@ def normalize_db():
             target_priority = mission_row[18]
             try:
 
-                t_cur.execute("INSERT INTO contreis (country_name)"
-                            " VALUES (%s,) RETURNING country_id",
-                            (country,))
-
+                params = (country,)
+                query = "INSERT INTO contreis (country_name) VALUES (%s) RETURNING country_id"
+                t_cur.execute(query, params)
                 country_id = t_cur.fetchone()[0]
             except psycopg2.errors.UniqueViolation:
                 pass
 
             try:
-                t_cur.execute("INSERT INTO citys (country_id, city_name)"
-                              " VALUES (%s,%s) RETURNING city_id",
-                              (country_id, city))
+                query = "INSERT INTO citys (country_id, city_name) VALUES (%s,%s) RETURNING city_id"
+                params = (country_id, city)
+                t_cur.execute(query, params)
+
 
                 city_id = t_cur.fetchone()[0]
             except psycopg2.errors.UniqueViolation:
                 pass
 
             try:
-                t_cur.execute("INSERT INTO locations (city_id, location_latitude, location_longitude)"
-                              " VALUES (%s,%s,%s) RETURNING location_id",
-                              (city_id, latitude, longitude))
+                query = "INSERT INTO locations (city_id, location_latitude, location_longitude) VALUES (%s,%s,%s) RETURNING location_id"
+                params = (city_id, latitude, longitude)
+                t_cur.execute(query, params)
 
                 location_id = t_cur.fetchone()[0]
             except psycopg2.errors.UniqueViolation:
                 pass
 
-            t_cur.execute("INSERT INTO targets (location_id, target_type, target_industry, target_priority)"
-                          " VALUES (%s,%s,%s,%s) RETURNING target_id",
-                          (location_id, target_type, target_industry, target_priority))
+            query = "INSERT INTO targets (location_id, target_type, target_industry, target_priority) VALUES (%s,%s,%s,%s) RETURNING target_id",
+            params = (location_id, target_type, target_industry, target_priority)
+            t_cur.execute(query, params)
 
             target_id = t_cur.fetchone()[0]
 
-            t_cur.execute("insert into fixed_mission select * from mission")
+            t_cur.execute("insert into fixed_mission select * from mission", ())
 
             params = (target_id, mission_id)
             update_target_query = "update fixed_mission set target_id = %s where mission_id = %s"
